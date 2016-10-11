@@ -1,0 +1,243 @@
+
+system_users = node.default[:users]
+start_uid = node.default[:starting_uid]
+home_prefix = node.default[:home_dir]
+
+
+# debug
+puts "**** DEBUG"
+puts "Home Prefix: #{home_prefix}"
+puts "Start UID: #{start_uid}"
+
+system_users.each do |named_section|
+	# puts "For system_users.each |named_section| is a: #{named_section.class}"
+	$username = String
+	@pubkeys = Array.new
+	$passhash = String
+
+	if named_section.is_a?(Array) then # on a users' section
+
+		named_section.each do |a_user|
+			# puts "For named_section.each |a_user| is a: #{a_user.class}"
+
+			if a_user.is_a?(String) then # must be the user name
+				$username = a_user
+				# puts "    found: #{$username}"
+			end
+
+			if a_user.is_a?(Chef::Node::VividMash) then # must be the ssh keys
+
+				# puts "    found vividmash: #{a_user}"
+				# puts "    found encrypted password: #{a_user[:encrypted_password]}"
+				$passhash = a_user[:encrypted_password]
+				# vividmash
+				# puts "    found pubkeys of type: #{a_user[:ssh_pubkeys].class}"
+				#puts a_user[:ssh_pubkeys]
+				a_user[:ssh_pubkeys].each do |sshkey|
+					# puts "    pushing pubkey of #{$username} onto pubkeys: #{sshkey[1]}"
+					@pubkeys.push(sshkey[1])
+				end
+			end
+		end
+	end
+
+
+
+
+	puts "    FOUND: #{$username} with passhash: #{$passhash} and the following keys:"
+	@pubkeys.each do |value|
+		puts value
+	end
+
+
+
+
+end # end loop on :users
+
+
+
+
+# is a Chef::Node::VividMash
+# puts "system_users is a: #{system_users.class}"
+# puts system_users
+
+# is a Fixnum
+# puts "start_uid is a: #{start_uid.class}"
+# puts start_uid
+
+# system_users_section.each do |login_name|
+
+# 	# is an Array
+# 	login_name.each do |value|
+
+# 		$username = String
+# 		@pubkeys = Array.new
+# 		$passhash = String
+
+# 		if value.is_a?(String) then
+# 			#puts "USERNAME: #{value}"
+# 			$username = value
+# 			next
+# 		end
+
+# 		if value.is_a?(Chef::Node::VividMash) then
+# 			# puts "USER Infoz: #{value.class}"
+# 			# puts value
+
+# 			value.each do |userinfoz|
+
+# 				# puts "userInfoz are a: #{userinfoz.class}"
+# 				# puts userinfoz
+
+# 				if userinfoz.is_a?(Array) then
+# 					userinfoz.each do |val|
+# 						# puts "userInfoz.each |val| is: #{val.class}"
+# 						# puts val
+
+# 						# then these are the ssh keys
+# 						if val.is_a?(Chef::Node::VividMash) then
+# 							val.each do |sshkey|
+# 								@pubkeys.push(sshkey[1])
+# 								# puts "found ssh key: #{sshkey[1]}"
+# 							end
+# 							next
+# 						end
+
+# 						# then we're on the encrypted password
+# 						if val.is_a?(String) && 
+# 								!( (val =~ /encrypted_password/) || (val =~ /ssh_pubkeys/) )  then
+# 							$passhash = val
+# 							# puts "found passhash: #{$passhash}"
+# 							next
+# 						end
+
+# 					end
+# 				end
+
+
+# 			end
+
+
+
+# 		end
+
+
+# 		puts "FOUND: #{$username} with encrypted password #{$passhash}"
+# 		puts "SSH KEYS: #{@pubkeys}"
+
+
+
+# 	end # end login_name loop on users
+
+# end
+
+
+# is a Chef::Node:VividMash
+# puts "node.default is a: #{node.default.class}"
+# puts node.default
+
+# node.default.each do |val|
+
+
+	# is an Array if not another Chef::Node::VividMash
+	# puts "node.default.each is a #{val.class}"
+	# puts val
+
+	# val.each do |val2|
+	# 	puts "node.default.VALUE.each is a #{val2.class}"
+	# 	puts val2
+	# end
+
+# end
+
+# puts "system_users is a: #{system_users.class} "
+# 	system_users.each do |login_name|
+# 		puts "login_name[0] is: #{login_name[0]}"
+# 		puts "login_name[1] is: #{login_name[1]}"
+# 		puts "login_name[2] is: #{login_name[2]}"
+# 		puts "login_name[3] is: #{login_name[3]}"
+# 		# puts "login_name[:ssh_pubkeys] is: #{login_name[:ssh_pubkeys]}"
+# 		# puts "login_name[:encrypted_password] is: #{login_name[:encrypted_password]}"
+# 	end
+puts "*** end DEBUG"
+
+
+# i = 0
+# system_users.each do |login_struct|
+
+# 	login_name = login_struct[0].to_str
+# 	pubkeys = login_struct[1] # Array
+# 	# passhash = 
+
+# 	# create user
+# 	user login_name do
+# 		username	login_name
+# 		uid         start_uid + i
+# 		gid         'users'
+# 		home        "/home/#{login_name}"
+# 		shell		'/bin/bash'
+# 		password    login_name['encrypted_password']
+# 		action 		:create
+# 	end
+
+# 	# confirm home dir for amazon
+# 	directory "/home/#{login_name}" do
+# 		owner 		login_name
+# 		group 		'users'
+# 		mode 		'0700'
+# 		action 		:create
+# 	end
+
+# 	# create ssl dir
+# 	directory "/home/#{login_name}/.ssh" do
+# 		owner 		login_name
+# 		group 		'users'
+# 		mode  		'0700'
+# 		action 		:create
+# 	end
+
+# 	# add public key(s) to authorized_keys
+# 	template "/home/#{login_name}/.ssh/authorized_keys" do
+# 		source 		'authorized_keys.erb'
+# 		owner		login_name
+# 		group		'users'
+# 		mode		'0600'
+# 		action		:create
+# 	end
+
+# 	# give sudo
+# 	group 'wheel' do
+# 		action		:modify
+# 		members 	login_name
+# 		append  	true
+# 	end
+
+# 	# .bash_profile and .bashrc
+# 	cookbook_file "/home/#{login_name}/.bash_profile" do
+# 		source 		'bash_profile'
+# 		owner 		login_name
+# 		group 		'users'
+# 		mode  		'0644'
+# 		action 		:create
+# 	end
+
+#     cookbook_file "/home/#{login_name}/.bashrc" do
+#         source 		'bashrc'
+#         owner 		login_name
+#         group 		'users'
+#         mode  		'0644'
+#         action 		:create
+#     end
+
+# 	i += 1	
+# end
+
+# ### Uncomment wheel group for sudoers
+# cookbook_file '/etc/sudoers' do
+# 	source 'sudoers'
+# 	owner  'root'
+# 	group  'root'
+# 	mode   '0440'
+# 	action :create
+# end
+
